@@ -207,6 +207,7 @@ const height = computed(() => props.content?.height || '100vh')
 const backgroundColor = computed(() => props.content?.backgroundColor || '#f8fafc')
 const projectId = computed(() => props.content?.projectId || 27666)
 const displayMode = computed(() => props.content?.displayMode || 'email')
+const emailWidth = computed(() => props.content?.emailWidth || 600)
 
 // New props for Supabase save
 const empresaId = computed(() => props.content?.empresaId)
@@ -367,6 +368,13 @@ const initUnlayer = async () => {
     unlayer.addEventListener('editor:ready', () => {
       console.log('[EMAIL-BUILDER] Editor pronto!')
       editorLoaded.value = true
+
+      // Set email body width (default 600px, similar to Klaviyo)
+      const width = emailWidth.value || 600
+      console.log('[EMAIL-BUILDER] Definindo largura do email:', width, 'px')
+      unlayer.setBodyValues({
+        contentWidth: `${width}px`,
+      })
 
       const initialDesign = props.content?.initialDesign
       if (initialDesign) {

@@ -149,5 +149,17 @@ export default {
       bindable: true,
       defaultValue: '/templates',
     },
+
+    emailWidth: {
+      label: { en: 'Email Width (px)', pt: 'Largura do Email (px)' },
+      type: 'Number',
+      section: 'settings',
+      bindable: true,
+      defaultValue: 600,
+      options: {
+        min: 400,
+        max: 800,
+      },
+    },
   },
 }
