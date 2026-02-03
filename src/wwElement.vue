@@ -75,6 +75,61 @@
       </div>
     </header>
 
+    <!-- Back Confirmation Modal -->
+    <div v-if="showBackConfirm" class="modal-overlay" @click.self="cancelBack">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Sair sem salvar?</h3>
+          <button class="modal-close" @click="cancelBack">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Suas alterações ainda não foram salvas. Se você sair agora, todas as mudanças serão perdidas.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn modal-btn-secondary" @click="cancelBack">Continuar editando</button>
+          <button class="modal-btn modal-btn-danger" @click="confirmBack">Sair sem salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Success Modal -->
+    <div v-if="showSaveSuccess" class="modal-overlay" @click.self="closeSaveSuccess">
+      <div class="modal-content">
+        <div class="modal-header modal-header-success">
+          <h3>Template salvo!</h3>
+          <button class="modal-close" @click="closeSaveSuccess">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <p>O template <strong>{{ templateName }}</strong> foi salvo com sucesso.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn modal-btn-primary" @click="navigateToTemplates">Ir para Templates</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Loading Overlay -->
+    <div v-if="isSaving" class="loading-overlay">
+      <div class="loading-spinner-large"></div>
+      <p class="loading-message">Salvando template...</p>
+    </div>
+
     <!-- Main Editor Container -->
     <div class="email-builder-container">
       <!-- Loading State -->
@@ -132,6 +187,11 @@ let unlayerInstance = null
 const isEditingTemplateName = ref(false)
 const editableTemplateName = ref('')
 const templateNameInputRef = ref(null)
+
+// Modal states
+const showBackConfirm = ref(false)
+const showSaveSuccess = ref(false)
+const hasChanges = ref(false)
 
 // ============================================
 // COMPUTED PROPERTIES
@@ -330,6 +390,7 @@ const initUnlayer = async () => {
     })
 
     unlayer.addEventListener('design:updated', (data) => {
+      hasChanges.value = true
       emit('trigger-event', {
         name: 'design-updated',
         event: {
@@ -416,7 +477,29 @@ const cancelTemplateNameEdit = () => {
 
 const handleBack = () => {
   console.log('[EMAIL-BUILDER] handleBack() chamado')
-  console.log('[EMAIL-BUILDER] templatesPagePath:', templatesPagePath.value)
+  console.log('[EMAIL-BUILDER] hasChanges:', hasChanges.value)
+
+  if (hasChanges.value) {
+    console.log('[EMAIL-BUILDER] Mostrando modal de confirmação')
+    showBackConfirm.value = true
+  } else {
+    navigateBack()
+  }
+}
+
+const cancelBack = () => {
+  console.log('[EMAIL-BUILDER] cancelBack() - fechando modal')
+  showBackConfirm.value = false
+}
+
+const confirmBack = () => {
+  console.log('[EMAIL-BUILDER] confirmBack() - saindo sem salvar')
+  showBackConfirm.value = false
+  navigateBack()
+}
+
+const navigateBack = () => {
+  console.log('[EMAIL-BUILDER] navigateBack() para:', templatesPagePath.value)
 
   // Emit event for any workflow that might be listening
   emit('trigger-event', {
@@ -427,10 +510,6 @@ const handleBack = () => {
   // Navigate to templates page
   try {
     const frontWindow = wwLib.getFrontWindow()
-    console.log('[EMAIL-BUILDER] frontWindow:', !!frontWindow)
-    console.log('[EMAIL-BUILDER] frontWindow.wwLib:', !!frontWindow?.wwLib)
-    console.log('[EMAIL-BUILDER] frontWindow.wwLib.goTo:', typeof frontWindow?.wwLib?.goTo)
-    console.log('[EMAIL-BUILDER] wwLib.goTo:', typeof wwLib?.goTo)
 
     if (frontWindow?.wwLib?.goTo) {
       console.log('[EMAIL-BUILDER] Usando frontWindow.wwLib.goTo()')
@@ -444,7 +523,6 @@ const handleBack = () => {
     }
   } catch (error) {
     console.error('[EMAIL-BUILDER] Erro ao navegar:', error)
-    // Fallback absoluto
     try {
       const frontWindow = wwLib.getFrontWindow()
       frontWindow.location.href = templatesPagePath.value
@@ -452,6 +530,15 @@ const handleBack = () => {
       console.error('[EMAIL-BUILDER] Erro no fallback:', e)
     }
   }
+}
+
+const closeSaveSuccess = () => {
+  showSaveSuccess.value = false
+}
+
+const navigateToTemplates = () => {
+  showSaveSuccess.value = false
+  navigateBack()
 }
 
 const handleSave = async () => {
@@ -512,6 +599,9 @@ const handleSave = async () => {
 
     console.log('[EMAIL-BUILDER] Template salvo:', result.data)
 
+    // Reset changes flag
+    hasChanges.value = false
+
     // Emit save event (for any workflow that might be listening)
     emit('trigger-event', {
       name: 'save',
@@ -525,20 +615,9 @@ const handleSave = async () => {
       }
     })
 
-    // Navigate to templates page
-    console.log('[EMAIL-BUILDER] Navegando para:', templatesPagePath.value)
-    const frontWindow = wwLib.getFrontWindow()
-
-    if (frontWindow?.wwLib?.goTo) {
-      console.log('[EMAIL-BUILDER] Save: Usando frontWindow.wwLib.goTo()')
-      frontWindow.wwLib.goTo(templatesPagePath.value)
-    } else if (wwLib?.goTo) {
-      console.log('[EMAIL-BUILDER] Save: Usando wwLib.goTo()')
-      wwLib.goTo(templatesPagePath.value)
-    } else {
-      console.log('[EMAIL-BUILDER] Save: Fallback window.location.href')
-      frontWindow.location.href = templatesPagePath.value
-    }
+    // Show success modal
+    console.log('[EMAIL-BUILDER] Mostrando modal de sucesso')
+    showSaveSuccess.value = true
 
   } catch (error) {
     console.error('[EMAIL-BUILDER] Erro ao salvar:', error)
@@ -881,5 +960,191 @@ onBeforeUnmount(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1A1A1A;
+  }
+}
+
+.modal-header-success h3 {
+  color: #16a34a;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: #6b7280;
+  }
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.modal-body {
+  padding: 20px;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+  }
+}
+
+.success-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+
+  svg {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.modal-btn {
+  padding: 9px 19px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.modal-btn-secondary {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+
+  &:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
+}
+
+.modal-btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+
+  &:hover {
+    background: #b91c1c;
+  }
+}
+
+.modal-btn-primary {
+  background: #7c3aed;
+  color: #ffffff;
+  border: none;
+
+  &:hover {
+    background: #6d28d9;
+  }
+}
+
+/* ============================================
+   LOADING OVERLAY
+   ============================================ */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2001;
+  gap: 16px;
+}
+
+.loading-spinner-large {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-message {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
 }
 </style>
