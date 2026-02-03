@@ -27,10 +27,13 @@ export default {
       name: 'save',
       label: { en: 'On save', pt: 'Ao salvar' },
       event: {
+        templateId: null,
         templateName: '',
         design: {},
         designJson: '',
         html: '',
+        success: false,
+        error: '',
       },
     },
     {
@@ -110,6 +113,41 @@ export default {
       section: 'style',
       defaultValue: '#f8fafc',
       bindable: true,
+    },
+
+    empresaId: {
+      label: { en: 'Company ID', pt: 'ID da Empresa' },
+      type: 'Number',
+      section: 'settings',
+      bindable: true,
+      defaultValue: null,
+    },
+
+    templateId: {
+      label: { en: 'Template ID (for edit mode)', pt: 'ID do Template (para edição)' },
+      type: 'Number',
+      section: 'settings',
+      bindable: true,
+      defaultValue: null,
+    },
+
+    assunto: {
+      label: { en: 'Email Subject', pt: 'Assunto do Email' },
+      type: 'Text',
+      section: 'settings',
+      bindable: true,
+      defaultValue: '',
+      options: {
+        placeholder: 'Ex: Seu pedido foi enviado!',
+      },
+    },
+
+    templatesPagePath: {
+      label: { en: 'Templates Page Path', pt: 'Caminho da Página de Templates' },
+      type: 'Text',
+      section: 'settings',
+      bindable: true,
+      defaultValue: '/templates',
     },
   },
 }

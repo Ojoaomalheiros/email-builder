@@ -63,6 +63,16 @@
           </template>
         </button>
       </div>
+      <!-- Save Error Toast -->
+      <div v-if="saveError" class="save-error-toast">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ saveError }}</span>
+        <button class="toast-close" @click="saveError = null">&times;</button>
+      </div>
     </header>
 
     <!-- Main Editor Container -->
@@ -113,6 +123,7 @@ const editorError = ref(null)
 const editorContainerRef = ref(null)
 const logoError = ref(false)
 const isSaving = ref(false)
+const saveError = ref(null)
 const currentDesign = ref(null)
 const currentHtml = ref('')
 let unlayerInstance = null
@@ -136,6 +147,12 @@ const height = computed(() => props.content?.height || '100vh')
 const backgroundColor = computed(() => props.content?.backgroundColor || '#f8fafc')
 const projectId = computed(() => props.content?.projectId || 27666)
 const displayMode = computed(() => props.content?.displayMode || 'email')
+
+// New props for Supabase save
+const empresaId = computed(() => props.content?.empresaId)
+const templateId = computed(() => props.content?.templateId)
+const assunto = computed(() => props.content?.assunto || '')
+const templatesPagePath = computed(() => props.content?.templatesPagePath || '/templates')
 
 const wrapperStyle = computed(() => ({
   height: height.value,
@@ -407,21 +424,97 @@ const handleBack = () => {
 const handleSave = async () => {
   try {
     isSaving.value = true
+    saveError.value = null
+
+    // Validate empresaId
+    if (!empresaId.value) {
+      throw new Error('ID da empresa não configurado')
+    }
 
     const { design, html } = await exportHtml()
+    const designJson = JSON.stringify(design)
+
+    // Get Supabase instance
+    const supabase = wwLib.wwPlugins?.supabase?.instance
+    if (!supabase) {
+      throw new Error('Plugin Supabase não encontrado')
+    }
+
+    // Prepare template data
+    const templateData = {
+      empresa_id: empresaId.value,
+      nome: templateName.value,
+      conteudo: html,
+      descricao: designJson, // Store design JSON in descricao for reload capability
+      tipo: 'email',
+      assunto: assunto.value || templateName.value,
+      ativo: true,
+      updated_at: new Date().toISOString(),
+    }
+
+    let result
+    if (templateId.value) {
+      // Update existing template
+      console.log('[EMAIL-BUILDER] Atualizando template:', templateId.value)
+      result = await supabase
+        .from('message_templates')
+        .update(templateData)
+        .eq('id', templateId.value)
+        .eq('empresa_id', empresaId.value)
+        .select()
+        .single()
+    } else {
+      // Insert new template
+      console.log('[EMAIL-BUILDER] Criando novo template')
+      result = await supabase
+        .from('message_templates')
+        .insert(templateData)
+        .select()
+        .single()
+    }
+
+    if (result.error) {
+      throw new Error(result.error.message)
+    }
+
+    console.log('[EMAIL-BUILDER] Template salvo:', result.data)
+
+    // Emit save event (for any workflow that might be listening)
+    emit('trigger-event', {
+      name: 'save',
+      event: {
+        templateId: result.data.id,
+        templateName: templateName.value,
+        design: design,
+        designJson: designJson,
+        html: html,
+        success: true,
+      }
+    })
+
+    // Navigate to templates page
+    const frontWindow = wwLib.getFrontWindow()
+    if (frontWindow.wwLib?.goTo) {
+      // WeWeb navigation
+      frontWindow.wwLib.goTo(templatesPagePath.value)
+    } else if (wwLib.goTo) {
+      wwLib.goTo(templatesPagePath.value)
+    } else {
+      // Fallback: direct navigation
+      frontWindow.location.href = templatesPagePath.value
+    }
+
+  } catch (error) {
+    console.error('[EMAIL-BUILDER] Erro ao salvar:', error)
+    saveError.value = error.message
 
     emit('trigger-event', {
       name: 'save',
       event: {
-        templateName: templateName.value,
-        design: design,
-        designJson: JSON.stringify(design),
-        html: html,
+        success: false,
+        error: error.message,
       }
     })
-
-  } catch (error) {
-    console.error('[EMAIL-BUILDER] Erro ao salvar:', error)
   } finally {
     isSaving.value = false
   }
@@ -478,6 +571,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
 }
 
 .header-left {
@@ -608,6 +702,56 @@ onBeforeUnmount(() => {
   border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+/* Save Error Toast */
+.save-error-toast {
+  position: absolute;
+  top: 100%;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  margin-top: 8px;
+  animation: slideDown 0.2s ease-out;
+}
+
+.save-error-toast svg {
+  flex-shrink: 0;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 0 0 8px;
+  line-height: 1;
+}
+
+.toast-close:hover {
+  color: #b91c1c;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .email-builder-container {
