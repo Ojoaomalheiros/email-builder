@@ -415,10 +415,43 @@ const cancelTemplateNameEdit = () => {
 // ============================================
 
 const handleBack = () => {
+  console.log('[EMAIL-BUILDER] handleBack() chamado')
+  console.log('[EMAIL-BUILDER] templatesPagePath:', templatesPagePath.value)
+
+  // Emit event for any workflow that might be listening
   emit('trigger-event', {
     name: 'back',
     event: {}
   })
+
+  // Navigate to templates page
+  try {
+    const frontWindow = wwLib.getFrontWindow()
+    console.log('[EMAIL-BUILDER] frontWindow:', !!frontWindow)
+    console.log('[EMAIL-BUILDER] frontWindow.wwLib:', !!frontWindow?.wwLib)
+    console.log('[EMAIL-BUILDER] frontWindow.wwLib.goTo:', typeof frontWindow?.wwLib?.goTo)
+    console.log('[EMAIL-BUILDER] wwLib.goTo:', typeof wwLib?.goTo)
+
+    if (frontWindow?.wwLib?.goTo) {
+      console.log('[EMAIL-BUILDER] Usando frontWindow.wwLib.goTo()')
+      frontWindow.wwLib.goTo(templatesPagePath.value)
+    } else if (wwLib?.goTo) {
+      console.log('[EMAIL-BUILDER] Usando wwLib.goTo()')
+      wwLib.goTo(templatesPagePath.value)
+    } else {
+      console.log('[EMAIL-BUILDER] Fallback: window.location.href')
+      frontWindow.location.href = templatesPagePath.value
+    }
+  } catch (error) {
+    console.error('[EMAIL-BUILDER] Erro ao navegar:', error)
+    // Fallback absoluto
+    try {
+      const frontWindow = wwLib.getFrontWindow()
+      frontWindow.location.href = templatesPagePath.value
+    } catch (e) {
+      console.error('[EMAIL-BUILDER] Erro no fallback:', e)
+    }
+  }
 }
 
 const handleSave = async () => {
@@ -493,14 +526,17 @@ const handleSave = async () => {
     })
 
     // Navigate to templates page
+    console.log('[EMAIL-BUILDER] Navegando para:', templatesPagePath.value)
     const frontWindow = wwLib.getFrontWindow()
-    if (frontWindow.wwLib?.goTo) {
-      // WeWeb navigation
+
+    if (frontWindow?.wwLib?.goTo) {
+      console.log('[EMAIL-BUILDER] Save: Usando frontWindow.wwLib.goTo()')
       frontWindow.wwLib.goTo(templatesPagePath.value)
-    } else if (wwLib.goTo) {
+    } else if (wwLib?.goTo) {
+      console.log('[EMAIL-BUILDER] Save: Usando wwLib.goTo()')
       wwLib.goTo(templatesPagePath.value)
     } else {
-      // Fallback: direct navigation
+      console.log('[EMAIL-BUILDER] Save: Fallback window.location.href')
       frontWindow.location.href = templatesPagePath.value
     }
 
