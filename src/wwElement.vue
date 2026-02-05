@@ -193,11 +193,17 @@ const showBackConfirm = ref(false)
 const showSaveSuccess = ref(false)
 const hasChanges = ref(false)
 
+// URL param loaded template
+const loadedTemplateId = ref(null)
+const loadedTemplateName = ref(null)
+const loadedTemplateAssunto = ref(null)
+const isLoadingTemplate = ref(false)
+
 // ============================================
 // COMPUTED PROPERTIES
 // ============================================
 
-const templateName = computed(() => props.content?.templateName || 'Novo Template')
+const templateName = computed(() => loadedTemplateName.value || props.content?.templateName || 'Novo Template')
 
 const logoUrl = computed(() => {
   return props.content?.logoUrl || 'https://rposipkylgypxzqucjae.supabase.co/storage/v1/object/public/flashcrm/logoflashSemFundo.png'
@@ -211,8 +217,8 @@ const emailWidth = computed(() => props.content?.emailWidth || 600)
 
 // New props for Supabase save
 const empresaId = computed(() => props.content?.empresaId)
-const templateId = computed(() => props.content?.templateId)
-const assunto = computed(() => props.content?.assunto || '')
+const templateId = computed(() => loadedTemplateId.value || props.content?.templateId)
+const assunto = computed(() => loadedTemplateAssunto.value || props.content?.assunto || '')
 const templatesPagePath = computed(() => props.content?.templatesPagePath || '/templates')
 
 const wrapperStyle = computed(() => ({
@@ -252,6 +258,53 @@ const mergeTags = computed(() => ({
     }
   },
 }))
+
+// ============================================
+// URL PARAM PARSING & TEMPLATE LOADING
+// ============================================
+
+const parseUrlParams = () => {
+  try {
+    const win = typeof wwLib !== 'undefined' ? wwLib.getFrontWindow() : window
+    const urlParams = new URLSearchParams(win?.location?.search || '')
+    return urlParams.get('id') ? parseInt(urlParams.get('id'), 10) : null
+  } catch (e) {
+    console.error('[EMAIL-BUILDER] Error parsing URL params:', e)
+    return null
+  }
+}
+
+const loadTemplateFromDb = async (id) => {
+  try {
+    isLoadingTemplate.value = true
+    console.log('[EMAIL-BUILDER] Carregando template do banco, id:', id)
+
+    const supabase = wwLib.wwPlugins?.supabase?.instance
+    if (!supabase) {
+      console.error('[EMAIL-BUILDER] Plugin Supabase não encontrado')
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('message_templates')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      console.error('[EMAIL-BUILDER] Erro ao buscar template:', error)
+      return null
+    }
+
+    console.log('[EMAIL-BUILDER] Template carregado:', data?.nome)
+    return data
+  } catch (error) {
+    console.error('[EMAIL-BUILDER] Erro ao carregar template:', error)
+    return null
+  } finally {
+    isLoadingTemplate.value = false
+  }
+}
 
 // ============================================
 // UNLAYER INITIALIZATION
@@ -365,7 +418,7 @@ const initUnlayer = async () => {
 
     unlayerInstance = unlayer
 
-    unlayer.addEventListener('editor:ready', () => {
+    unlayer.addEventListener('editor:ready', async () => {
       console.log('[EMAIL-BUILDER] Editor pronto!')
       editorLoaded.value = true
 
@@ -376,9 +429,41 @@ const initUnlayer = async () => {
         contentWidth: `${width}px`,
       })
 
-      const initialDesign = props.content?.initialDesign
-      if (initialDesign) {
-        loadDesign(initialDesign)
+      // Priority 1: Load template from URL ?id= param
+      const urlTemplateId = parseUrlParams()
+      if (urlTemplateId) {
+        console.log('[EMAIL-BUILDER] Template ID encontrado na URL:', urlTemplateId)
+        const template = await loadTemplateFromDb(urlTemplateId)
+        if (template) {
+          loadedTemplateId.value = template.id
+          loadedTemplateName.value = template.nome
+          loadedTemplateAssunto.value = template.assunto
+
+          // Design JSON is stored in descricao field
+          if (template.descricao) {
+            try {
+              const design = typeof template.descricao === 'string'
+                ? JSON.parse(template.descricao)
+                : template.descricao
+              unlayer.loadDesign(design)
+              console.log('[EMAIL-BUILDER] Design carregado do banco')
+            } catch (e) {
+              console.error('[EMAIL-BUILDER] Erro ao parsear design JSON:', e)
+            }
+          }
+
+          emit('trigger-event', {
+            name: 'template-loaded',
+            event: { template }
+          })
+        }
+      }
+      // Priority 2: Load from props (WeWeb binding)
+      else {
+        const initialDesign = props.content?.initialDesign
+        if (initialDesign) {
+          loadDesign(initialDesign)
+        }
       }
 
       emit('trigger-event', {
@@ -466,6 +551,7 @@ const startTemplateNameEdit = () => {
 const handleTemplateNameBlur = () => {
   const newName = editableTemplateName.value.trim()
   if (newName && newName !== templateName.value) {
+    loadedTemplateName.value = newName
     emit('trigger-event', {
       name: 'name-changed',
       event: { templateName: newName }

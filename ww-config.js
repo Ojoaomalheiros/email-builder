@@ -37,6 +37,11 @@ export default {
       },
     },
     {
+      name: 'template-loaded',
+      label: { en: 'On template loaded', pt: 'Quando template carregado' },
+      event: { template: {} },
+    },
+    {
       name: 'back',
       label: { en: 'On back click', pt: 'Ao clicar em voltar' },
       event: {},
