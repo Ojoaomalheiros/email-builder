@@ -984,26 +984,33 @@ onBeforeUnmount(() => {
 
 .email-builder-container {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   position: relative;
   background: #f8fafc;
-  min-height: 0;
   overflow: hidden;
 }
 
 .unlayer-editor {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
 
   &.unlayer-hidden {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     visibility: hidden;
     pointer-events: none;
   }
 
-  // Force Unlayer iframe to fill container
+  // Force Unlayer iframe to fill the flex-computed size
   :deep(iframe) {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
     height: 100% !important;
     border: none !important;
@@ -1011,11 +1018,7 @@ onBeforeUnmount(() => {
 }
 
 .editor-loading-state {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
