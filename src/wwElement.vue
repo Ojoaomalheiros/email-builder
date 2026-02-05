@@ -154,7 +154,6 @@
         ref="editorContainerRef"
         class="unlayer-editor"
         :class="{ 'unlayer-hidden': !editorLoaded }"
-        :style="{ minHeight: '700px' }"
       ></div>
     </div>
   </div>
@@ -785,6 +784,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   width: 100%;
   height: 100%;
+  min-height: 700px;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -988,30 +988,42 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   background: #f8fafc;
+  position: relative;
+  min-height: 600px;
+  height: 100%;
+  overflow: hidden;
 }
 
-// Match official Unlayer Vue component pattern:
-// flex: 1 + display: flex, with inline minHeight
 .unlayer-editor {
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
   flex: 1;
-  display: flex;
 
   &.unlayer-hidden {
-    // Must use visibility:hidden (NOT display:none) so Unlayer can
-    // measure container dimensions during init before editor:ready fires
     position: absolute;
     visibility: hidden;
     pointer-events: none;
   }
+
+  // Force Unlayer iframe to fill container
+  :deep(iframe) {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 600px !important;
+    border: none !important;
+  }
 }
 
 .editor-loading-state {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
+  min-height: 600px;
   gap: 16px;
+  flex: 1;
 }
 
 .editor-loading {
