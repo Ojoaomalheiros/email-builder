@@ -997,7 +997,11 @@ onBeforeUnmount(() => {
   display: flex;
 
   &.unlayer-hidden {
-    display: none;
+    // Must use visibility:hidden (NOT display:none) so Unlayer can
+    // measure container dimensions during init before editor:ready fires
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
   }
 }
 
