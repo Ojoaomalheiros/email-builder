@@ -520,14 +520,21 @@ const loadDesign = (design) => {
 }
 
 const fixEmailHeight = (html) => {
-  // Add height:100% to html/body/table so background fills the entire email client viewport
+  // Make email background fill full viewport in email clients (Gmail, Outlook, etc.)
   let fixed = html
-    .replace(/<html/i, '<html style="height:100%;" ')
-    .replace(/<body([^>]*?)style="([^"]*?)"/i, '<body$1style="$2;height:100%"')
-    .replace(
-      /(<table[^>]*?role="presentation"[^>]*?style="[^"]*?)(")/i,
-      '$1;height:100%$2'
-    )
+
+  // 1. Add height=100% HTML attribute on outer table (most reliable for email clients)
+  fixed = fixed.replace(
+    /(<table[^>]*?role="presentation"[^>]*?)(cellpadding)/i,
+    '$1height="100%" $2'
+  )
+
+  // 2. Add height:100% to body style
+  fixed = fixed.replace(
+    /(<body[^>]*?style=")(.*?)(")/i,
+    '$1$2;height:100%;min-height:100%$3'
+  )
+
   return fixed
 }
 
