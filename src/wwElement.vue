@@ -519,6 +519,18 @@ const loadDesign = (design) => {
   }
 }
 
+const fixEmailHeight = (html) => {
+  // Add height:100% to html/body/table so background fills the entire email client viewport
+  let fixed = html
+    .replace(/<html/i, '<html style="height:100%;" ')
+    .replace(/<body([^>]*?)style="([^"]*?)"/i, '<body$1style="$2;height:100%"')
+    .replace(
+      /(<table[^>]*?role="presentation"[^>]*?style="[^"]*?)(")/i,
+      '$1;height:100%$2'
+    )
+  return fixed
+}
+
 const exportHtml = () => {
   return new Promise((resolve, reject) => {
     if (!unlayerInstance) {
@@ -528,9 +540,10 @@ const exportHtml = () => {
 
     unlayerInstance.exportHtml((data) => {
       const { design, html } = data
+      const fixedHtml = fixEmailHeight(html)
       currentDesign.value = design
-      currentHtml.value = html
-      resolve({ design, html })
+      currentHtml.value = fixedHtml
+      resolve({ design, html: fixedHtml })
     })
   })
 }
