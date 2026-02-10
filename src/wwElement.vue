@@ -227,34 +227,35 @@ const wrapperStyle = computed(() => ({
 }))
 
 // Default merge tags for FlashCRM
+// Must match message_variaveis_dinamicas() in the database
 const mergeTags = computed(() => ({
   cliente: {
     name: 'Cliente',
     mergeTags: {
-      nome: { name: 'Nome', value: '{{cliente.nome}}' },
-      email: { name: 'Email', value: '{{cliente.email}}' },
-      telefone: { name: 'Telefone', value: '{{cliente.telefone}}' },
+      nome_cliente: { name: 'Nome Completo', value: '{{nome_cliente}}' },
+      primeiro_nome: { name: 'Primeiro Nome', value: '{{primeiro_nome}}' },
+      sobrenome: { name: 'Sobrenome', value: '{{sobrenome}}' },
+      email: { name: 'Email', value: '{{email}}' },
+      telefone: { name: 'Telefone', value: '{{telefone}}' },
     }
   },
   pedido: {
     name: 'Pedido',
     mergeTags: {
-      numero: { name: 'Número', value: '{{pedido.numero}}' },
-      valor: { name: 'Valor Total', value: '{{pedido.valor}}' },
-      status: { name: 'Status', value: '{{pedido.status}}' },
+      numero_pedido: { name: 'Número do Pedido', value: '{{numero_pedido}}' },
+      valor_pedido: { name: 'Valor (R$ formatado)', value: '{{valor_pedido}}' },
+      status_pedido: { name: 'Status', value: '{{status_pedido}}' },
     }
   },
-  empresa: {
-    name: 'Empresa',
+  cashback: {
+    name: 'Cashback / Cupom',
     mergeTags: {
-      nome: { name: 'Nome', value: '{{empresa.nome}}' },
-    }
-  },
-  cupom: {
-    name: 'Cupom',
-    mergeTags: {
-      codigo: { name: 'Código', value: '{{cupom.codigo}}' },
-      desconto: { name: 'Desconto', value: '{{cupom.desconto}}' },
+      cupom: { name: 'Código do Cupom', value: '{{cupom}}' },
+      valor_cashback: { name: 'Valor do Cashback', value: '{{valor_cashback}}' },
+      desconto_max: { name: 'Desconto Máximo (%)', value: '{{desconto_max}}' },
+      compra_minima: { name: 'Compra Mínima (R$)', value: '{{compra_minima}}' },
+      data_vencimento: { name: 'Data de Vencimento', value: '{{data_vencimento}}' },
+      data_ativacao: { name: 'Data de Ativação', value: '{{data_ativacao}}' },
     }
   },
 }))
