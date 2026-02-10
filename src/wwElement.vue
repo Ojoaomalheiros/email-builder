@@ -409,6 +409,26 @@ const initUnlayer = async () => {
         },
         userUploads: true,
       },
+      tools: {
+        // Default tools (already visible)
+        button: { enabled: true },
+        columns: { enabled: true },
+        divider: { enabled: true },
+        heading: { enabled: true },
+        html: { enabled: true },
+        image: { enabled: true },
+        text: { enabled: true },
+        menu: { enabled: true },
+        // Additional tools (some require paid Unlayer plan)
+        social: { enabled: true },
+        timer: { enabled: true },
+        video: { enabled: true },
+        carousel: { enabled: true },
+        table: { enabled: true },
+        paragraph: { enabled: true },
+        // Form is NOT compatible with email displayMode
+        form: { enabled: false },
+      },
     }
 
     console.log('[EMAIL-BUILDER] Inicializando Unlayer (locale requer plano pago)')
