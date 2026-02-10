@@ -232,8 +232,7 @@ const mergeTags = computed(() => ({
   cliente: {
     name: 'Cliente',
     mergeTags: {
-      nome_cliente: { name: 'Nome Completo', value: '{{nome_cliente}}' },
-      primeiro_nome: { name: 'Primeiro Nome', value: '{{primeiro_nome}}' },
+      nome_cliente: { name: 'Primeiro Nome', value: '{{nome_cliente}}' },
       sobrenome: { name: 'Sobrenome', value: '{{sobrenome}}' },
       email: { name: 'Email', value: '{{email}}' },
       telefone: { name: 'Telefone', value: '{{telefone}}' },
