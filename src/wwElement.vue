@@ -257,6 +257,16 @@ const mergeTags = computed(() => ({
       data_ativacao: { name: 'Data de Ativação', value: '{{data_ativacao}}' },
     }
   },
+  carrinho: {
+    name: 'Carrinho Abandonado',
+    mergeTags: {
+      carrinho_total: { name: 'Total do Carrinho', value: '{{carrinho_total}}' },
+      carrinho_url: { name: 'Link de Recuperação', value: '{{carrinho_url}}' },
+      carrinho_qtd_itens: { name: 'Qtd Itens', value: '{{carrinho_qtd_itens}}' },
+      produtos_carrinho: { name: 'Lista de Produtos', value: '{{produtos_carrinho}}' },
+      carrinho_frete: { name: 'Frete', value: '{{carrinho_frete}}' },
+    }
+  },
 }))
 
 // ============================================
